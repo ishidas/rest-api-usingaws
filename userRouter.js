@@ -106,17 +106,16 @@ UsersRoute.put('/users/:id', (req, res)=>{
   });
 });
 
-// UsersRoute.delete('/users/:id', (req, res)=>{
-//   console.log('here is delete request on /users');
-//   var idUrl = req.params.id;
-//   var params = {Bucket: 'sawabucket', Key: idUrl};
-//   s3.deleteObject(params, (err, data)=>{
-//     if(err){
-//       return console.log('AWS error : ' + err);
-//     }
-//     res.send(data + ' object has been deleted!');
-//     res.end();
-//   });
-// });
+UsersRoute.delete('/users/:id', (req, res)=>{
+  console.log('here is delete request on /users');
+  var idUrl = req.params.id;
+  User.remove({_id: idUrl}, (err, data)=>{
+    if(err){
+      return console.log('Error removing item : ' + err);
+    }
+    console.log('Item removed Successfully! ' +  data);
+    res.end();
+  });
+});
 
 module.exports = UsersRoute;
