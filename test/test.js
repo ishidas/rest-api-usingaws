@@ -11,39 +11,42 @@ process.env.MONGOLAB_URI = 'mongodb://localhost/test';
 // let File = require(__dirname + '/../models/filesSchema');
 require('./../server');
 
-describe('Integration test on delete /user/:id route',()=>{
+describe('Integration routes',()=>{
   var testUser;
-    // newUser.save((err, user)=>{
-    //   if(err){
-    //     console.log(err);
-    //     return;
-    //   }
-    //   console.log('Successfully created a new user : ' + user );
-    //   testUser = user;
-    //   console.log(testUser);
-    //   done();
-  //   });
-  // });
-  after((done)=>{
-    mongoose.connection.test.dropDatabase(()=>{
-      done();
-    });
-  });
-  it('should create respond back with a new user', (done)=>{
+  var id;
+  beforeEach((done)=>{
     testUser = {name: 'Otter'};
     request('localhost:3000')
     .post('/users')
     .send(testUser)
     .end((err, res)=>{
-      debugger;
-      expect(res.body).to.be.an('object');
-      // expect(res.body).to.have.
+      console.log('test response sent');
+      id = res.body._id;
       done();
     });
-  // it('should respond back with res.body with no array of files', (done)=>{
-  //   request('localhost:3000')
-  //   .delete('/user/:id')
-  //   .send()
-  //   done();
+  });
+  after((done)=>{
+    mongoose.connection.collections['users'].drop(function(){
+      console.log('collections dropped.');
+      done();
+    });
+  });
+  it('should create respond back with a new user', (done)=>{
+    request('localhost:3000')
+    .post('/users')
+    .send(testUser)
+    .end((err, res)=>{
+      // debugger;
+      expect(res.body).to.be.an('object');
+      done();
+    });
+  });
+  it('should update the user file array to be empty',(done)=>{
+    request('localhost:3000')
+    .delete('/users/'+ id)
+    .end((err, res)=>{
+      expect(res).to.be.o;
+      done();
+    });
   });
 });

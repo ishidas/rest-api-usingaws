@@ -47,35 +47,28 @@ UsersRoute.get('/users/:id', (req, res)=>{
 // });
 
 UsersRoute.post('/users', (req, res)=>{
-  console.log('here is post request on : ' + req.url);
   var newUser = new User(req.body);
   newUser.save((err, user)=>{
-    res.json(user);
+    console.log('newUser saved : ' + user);
   });
-  console.log('Here is req.body :  ' + JSON.stringify(req.body));
+
   s3.createBucket({Bucket: 'sawabucket'},()=>{
     var params = {Bucket: 'sawabucket', Key: req.body.name, Body: JSON.stringify(req.body) };
-    console.log(req.body);
     s3.upload(params, (err, data)=>{
-      // console.log(data);
       if(err){
         return console.log('AWS err here : ' + err);
       }
       console.log('Successfully uploaded data : ' + JSON.stringify(data));
-      res.json(data.Body);
-
-      if(data.ETag){
-        var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: req.body.name});
-        console.log('This is url from aws : ' + url);
-        var newFile = new File({url: JSON.stringify(url)});
-        newFile.save((err, file)=>{
-          if(err){
-            return console.log('AWS error : ' + err);
-          }
-          console.log('Your file url has been save in MongoDB : ' + file);
-        });
-        res.end();
+    });
+    var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: req.body.name});
+    console.log('This is url from aws : ' + url);
+    var newFile = new File({url: url});
+    newFile.save((err, file)=>{
+      if(err){
+        return console.log('AWS error : ' + err);
       }
+      console.log('Your file url has been save in MongoDB : ' + file);
+      res.json(file);
     });
   });
 });
@@ -96,7 +89,7 @@ UsersRoute.post('/users', (req, res)=>{
 
 UsersRoute.put('/users/:id', (req, res)=>{
   var idUrl = req.params.id;
-  var updateData = {$push: {files: req.body.files }}
+  var updateData = {$push: {files: req.body.files }};
   var query = {_id: idUrl};
   console.log('here is PUT request on /users');
 
@@ -115,7 +108,7 @@ UsersRoute.delete('/users/:id', (req, res)=>{
       return console.log('Error removing item : ' + err);
     }
     console.log('Item removed Successfully! ' +  data);
-    res.end();
+    res.writeHeader(200);
   });
 });
 
