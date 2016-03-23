@@ -52,8 +52,9 @@ UsersRoute.post('/users', (req, res)=>{
   newUser.save((err, user)=>{
     res.json(user);
   });
+  console.log('Here is req.body :  ' + JSON.stringify(req.body));
   s3.createBucket({Bucket: 'sawabucket'},()=>{
-    var params = {Bucket: 'sawabucket', Key: req.body.user, Body: JSON.stringify(req.body) };
+    var params = {Bucket: 'sawabucket', Key: req.body.name, Body: JSON.stringify(req.body) };
     console.log(req.body);
     s3.upload(params, (err, data)=>{
       // console.log(data);
@@ -64,7 +65,7 @@ UsersRoute.post('/users', (req, res)=>{
       res.json(data.Body);
 
       if(data.ETag){
-        var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: req.body.user});
+        var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: req.body.name});
         console.log('This is url from aws : ' + url);
         var newFile = new File({url: JSON.stringify(url)});
         newFile.save((err, file)=>{
