@@ -45,8 +45,12 @@ describe('Integration routes',()=>{
     request('localhost:3000')
     .delete('/users/'+ id)
     .end((err, res)=>{
-      expect(res).to.be.o;
+      expect(res.body.files).to.be([]);
       done();
     });
   });
+  // it('should update a certain user files array to empty',(done)=>{
+  //   request('localhost:3000')
+  //   .delete('')
+  // });
 });

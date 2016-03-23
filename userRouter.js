@@ -103,12 +103,35 @@ UsersRoute.put('/users/:id', (req, res)=>{
 UsersRoute.delete('/users/:id', (req, res)=>{
   console.log('here is delete request on /users');
   var idUrl = req.params.id;
+
+
+  User.update({_id: idUrl}, {$set: {files: []}},(err, data)=>{
+    if(err){
+      console.log('Not updated : ' + err);
+      return;
+    }
+    console.log('No files data : ' + data);
+  });
+
+  User.findOne({_id: idUrl}, (err, data)=>{
+    debugger;
+    var params = {Bucket: 'sawabucket', Key: data.user};
+    s3.deleteObject(params, (err, data)=>{
+      if(err){
+        console.log('Not deleted successfully : ' + err);
+        return;
+      }
+      console.log('Deleted! : ' + JSON.stringify(data));
+    });
+  });
+
   User.remove({_id: idUrl}, (err, data)=>{
     if(err){
       return console.log('Error removing item : ' + err);
     }
     console.log('Item removed Successfully! ' +  data);
-    res.writeHeader(200);
+    res.send(data);
+    res.end();
   });
 });
 
