@@ -84,15 +84,14 @@ UsersRoute.post('/users/:id/files', (req, res)=>{
 //   });
 // });
 
-UsersRoute.put('/users/:user/files/:file', (req, res)=>{
-  var idUrl = req.params.id;
+UsersRoute.put('/users/:id/files/:file', (req, res)=>{
+  var id = req.params.id;
   var idFile = req.url.split('/');
-  var updateData = {$push: {files: JSON.stringify(idFile[4])}};
-  var query = {_id: idFile[2]};
+  var updateData = {$push: {files: idFile[4]}};
+  var query = {_id: id};
   console.log(idFile[4]);
   console.log('params : ' + idFile[2]);
-  User.update(query, updateData,(err, data)=>{
-    console.log('Here is : ' + JSON.stringify(data));
+  User.findOneAndUpdate(query, updateData,(err, data)=>{
     res.json(data);
     res.end();
   });
