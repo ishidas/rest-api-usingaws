@@ -10,12 +10,12 @@ process.env.MONGOLAB_URI = 'mongodb://localhost/test';
 // let User = require(__dirname + '/../models/userSchema');
 // let File = require(__dirname + '/../models/filesSchema');
 require('./../server');
-
+var testUser = {name: 'Otter'};
+var id;
+var newFileId;
 describe('Integration routes',()=>{
-  var testUser;
-  var id;
-  beforeEach((done)=>{
-    testUser = {name: 'Otter'};
+
+  before((done)=>{
     request('localhost:3000')
     .post('/users')
     .send(testUser)
@@ -36,7 +36,16 @@ describe('Integration routes',()=>{
     .post('/users')
     .send(testUser)
     .end((err, res)=>{
-      // debugger;
+      newFileId = res.body.id;
+      expect(res.body).to.be.an('object');
+      done();
+    });
+  });
+  it('should create respond back with a new user', (done)=>{
+    request('localhost:3000')
+    .put('/users/' + id)
+    .send({files: newFileId})
+    .end((err, res)=>{
       expect(res.body).to.be.an('object');
       done();
     });
@@ -45,6 +54,7 @@ describe('Integration routes',()=>{
     request('localhost:3000')
     .delete('/users/'+ id)
     .end((err, res)=>{
+      debugger;
       expect(res.body.files).to.be([]);
       done();
     });
