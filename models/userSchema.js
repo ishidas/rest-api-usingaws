@@ -1,6 +1,6 @@
 'use strict';
 const mongoose = require('mongoose');
-const UserSchema = new mongoose.Schema({
+let UserSchema = new mongoose.Schema({
   user: String,
   files: [{type: mongoose.Schema.Types.ObjectId,
             ref: 'File'

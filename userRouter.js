@@ -13,6 +13,7 @@ require('./server');
 UsersRoute.use(bodyParser.json());
 // UsersRoute.setMaxListeners(0);
 
+//GET all users data
 UsersRoute.get('/users', (req, res)=>{
   User.find({}, (err, user)=>{
     res.json(user);
@@ -20,6 +21,7 @@ UsersRoute.get('/users', (req, res)=>{
   });
 });
 
+//GET a particular user by their ID
 UsersRoute.get('/users/:id', (req, res)=>{
   var idUrl = req.params.id;
   User.find({_id: idUrl}, (err, user)=>{
@@ -28,17 +30,28 @@ UsersRoute.get('/users/:id', (req, res)=>{
   });
 });
 
+//GET all the files for a paticular user
 UsersRoute.get('/users/:id/files', (req, res)=>{
-  console.log('here is get/:id request on /users/:id/files');
-  var idUrl = req.params.id;
-  var query = req.url.split('/')[3];
-  console.log(idUrl);
-  console.log(query);
-  File.find({_id: idUrl},(err, file)=>{
-    res.json({files: file.files});
+  var id = req.params.id;
+  // var query = req.url.split('/')[3];
+  User.findOne({_id: id},(err, file)=>{
+    res.json(file.files);
   });
 });
 
+//GET a specific file from a specified user
+UsersRoute.get('/users/:id/files/:file', (req, res)=>{
+  var id = req.params.id;
+  var fileId = req.url.split('/');
+  User.findOne({_id: id }, (err, user)=>{
+    File.findOne({_id: fileId[4] }, (err, file)=>{
+      console.log(file);
+      res.json(file);
+    });
+  });
+});
+
+//POST new user data (data only no files)
 UsersRoute.post('/users', (req, res)=>{
   var newUser = new User(req.body);
   newUser.save((err, user)=>{
@@ -46,25 +59,39 @@ UsersRoute.post('/users', (req, res)=>{
   });
 });
 
+//POST a file
 UsersRoute.post('/users/:id/files', (req, res)=>{
   var idUser = req.params.id;
-  User.findOne({_id: idUser}, (err, user)=>{
+  var body = req.body;
+  var newFile = new File();
+
+  newFile.save((err, file)=>{
+    if(err){
+      return res.json({msg: 'new file created'});
+    }
+    User.findOne({_id: idUser},function(err, user){
+      user.files.push(file._id);
+      user.save();
+    });
+    User.findOne({_id: idUser},function(err, user){
+      console.log(user);
+    });
     s3.createBucket({Bucket: 'sawabucket'},()=>{
-      var params = {Bucket: 'sawabucket', Key: user.user, Body: JSON.stringify(user)};
+      var params = {Bucket: 'sawabucket', Key: JSON.stringify(file._id), Body: JSON.stringify(body)};
       s3.upload(params, (err, data)=>{
         if(err){
           return console.log('AWS err here : ' + err);
         }
         console.log('Successfully uploaded data : ' + JSON.stringify(data));
-        res.json(data);
-      });
-      var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: user.user});
-      var newFile = new File({url: url});
-      newFile.save((err, file)=>{
-        if(err){
-          return console.log('AWS error : ' + err);
-        }
-        res.json(file);
+        //next time, use this below command instead og grabbing url inside upload
+        var urlaws = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: JSON.stringify(file._id)});
+        console.log('Here is AWS URL :  ' + urlaws);
+        File.update({_id: file._id}, {url: urlaws }, (err, file)=>{
+          console.log('Here is file!!!  : ' + file);
+        });
+        File.findOne({_id: file._id},(err, data)=>{
+          res.json(data);
+        });
       });
     });
   });
@@ -84,6 +111,7 @@ UsersRoute.post('/users/:id/files', (req, res)=>{
 //   });
 // });
 
+//adding file_id into a user
 UsersRoute.put('/users/:id/files/:file', (req, res)=>{
   var id = req.params.id;
   var idFile = req.url.split('/');
@@ -97,9 +125,40 @@ UsersRoute.put('/users/:id/files/:file', (req, res)=>{
   });
 });
 
-UsersRoute.delete('/users/:id', (req, res)=>{
+//Updates/changes info for a patircular user
+UsersRoute.put('/users/:id',(req, res)=>{
+  var id = req.params.id;
+  var updateData = {user: req.body.user };
+  console.log(updateData);
+  User.findOneAndUpdate({_id: id}, updateData, (err, user)=>{
+    res.json(user);
+  });
+});
+
+// UsersRoute.put('/users/:id/files/:file', (req, res)=>{
+//   var id = req.params.id;
+//   var fileId = req.url.split('/');
+//   var params = {Bucket: 'sawabucket', {Key: }}
+//
+// });
+
+UsersRoute.delete('/users/:id/files/:file', (req, res)=>{
   console.log('here is delete request on /users');
-  var idUrl = req.params.id;
+  var id = req.params.id;
+  var urlId = req.url.split('/');
+
+  // User.findOneAndUpdate({_id: id},{$pull: {files: urlId[4]}},(err, user)=>{
+  //   console.log(user);
+  //   res.end();
+  // });
+  File.findOne({_id: urlId[4]},(err, user)=>{
+    var param = {Bucket: 'sawabucket', EncodingType: user.url };
+    console.log(user.url);
+    s3.listObjects(param, (err, data)=>{
+      data.remove();
+    });
+    res.end();
+  });
   // User.findOne({_id: idUrl}, (err, user)=>{
   //   if(err){
   //     return res.json({msg: 'There was an err findind data'});
