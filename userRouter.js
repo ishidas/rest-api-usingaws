@@ -77,7 +77,7 @@ UsersRoute.post('/users/:id/files', (req, res)=>{
       var params = {Bucket: 'sawabucket', Key: JSON.stringify(file._id), Body: JSON.stringify(body)};
       s3.upload(params, (err, data)=>{
         if(err){
-          return console.log('AWS err here : ' + err);
+          return res.json({msg: err});
         }
         console.log('Successfully uploaded data : ' + JSON.stringify(data));
         //next time, use this below command instead og grabbing url inside upload

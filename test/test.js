@@ -13,7 +13,7 @@ require('./../server');
 var testUser = {user: 'Otter'};
 var testFile = {myNote: 'Otter is the cutest animal.'};
 var id;
-var newFileId;
+var fileId;
 
 describe('Integration test for routes',()=>{
   after((done)=>{
@@ -25,6 +25,7 @@ describe('Integration test for routes',()=>{
     .post('/users')
     .send(testUser)
     .end((err, res)=>{
+      id = res.body._id;
       expect(err).to.be.null;
       expect(res.body).to.be.an('object');
       expect(res.body._id).to.have.a('string');
@@ -43,4 +44,37 @@ describe('Integration test for routes',()=>{
       done();
     });
   });
+  it('should POST files into a specified user', (done)=>{
+    request('localhost:3000')
+    .post('/users/' + id + '/files')
+    .send(testFile)
+    .end((err, res)=>{
+      fileId = res.body._id;
+      expect(err).to.be.null;
+      expect(res.body).to.be.an('Object');
+      expect(res.body).to.have.property('_id');
+      expect(res.body).to.have.property('url');
+      done();
+    });
+  });
+  it('should GET a specified user', ()=>{
+    request('localhost:3000')
+    .get('/users/' + id)
+    .end((err, res)=>{
+      expect(err).to.be.null;
+      expect(res.body).to.have.property('user');
+      expect(res.body).to.have.property('files');
+    });
+  });
+  it('should GET a speified file from a specific user', (done)=>{
+    request('localhost:3000')
+    .get('/users/' + id + '/files/' + fileId)
+    .end((err, res)=>{
+      expect(err).to.be.null;
+      expect(res.body).to.have.property('_id');
+      expect(res.body).to.have.property('url');
+      done();
+    });
+  });
+  it('shoul PUT new ')
 });
