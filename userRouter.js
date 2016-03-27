@@ -173,7 +173,7 @@ UsersRoute.delete('/users/:id/files/:file', (req, res)=>{
   });
   File.findOne({_id: urlId}, (err, file)=>{
     if(err){
-      console.log('No such file exist : ' + err);
+      return console.log('No such file exist : ' + err);
     }
     console.log('File is still in db  : ' + file);
   });
