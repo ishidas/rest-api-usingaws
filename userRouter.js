@@ -11,22 +11,19 @@ var s3 = new AWS.S3();
 
 require('./server');
 UsersRoute.use(bodyParser.json());
-// UsersRoute.setMaxListeners(0);
 
 //GET all users data
 UsersRoute.get('/users', (req, res)=>{
   User.find({}, (err, user)=>{
     res.json(user);
-    res.end();
   });
 });
 
 //GET a particular user by their ID
 UsersRoute.get('/users/:id', (req, res)=>{
   var idUrl = req.params.id;
-  User.find({_id: idUrl}, (err, user)=>{
+  User.findOne({_id: idUrl}, (err, user)=>{
     res.json(user);
-    res.end();
   });
 });
 
