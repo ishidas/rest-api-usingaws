@@ -150,7 +150,29 @@ UsersRoute.put('/users/:id',(req, res)=>{
   });
 });
 
+//DELETE files from s3 and User specified
+UsersRoute.delete('/users/:id', (req, res)=>{
+  var id = req.params.id;
+  User.findOne({_id: id},(err, user)=>{
+    var filesArr = user.files;
+    if(filesArr.length > -1){
+      filesArr.forEach((data)=>{
+        s3.deleteObjects({Bucket: 'sawabucket', Delete:{ Objects:[{Key: JSON.stringify(data) }]}}, (err, obj)=>{
+          if(err){
+            return res.json({msg: 'AWS error  ' + err});
+          }
+          console.log('Successfully deleted your objects!! ' + JSON.stringify(obj));
+        });
+      });
+      user.remove();
+      return res.json({msg: 'Specified user and files have been removed from db!!'});
+    }
+    user.remove();
+    res.json({msg: 'Specified user has been removed from db!!'});
+  });
+});
 
+//DELETE a specified file from s3, pull that out of User ref, and remove file from db
 UsersRoute.delete('/users/:id/files/:file', (req, res)=>{
   console.log('here is delete request on /users');
   var id = req.params.id;
