@@ -45,7 +45,7 @@ UsersRoute.get('/users/:id/files/:file', (req, res)=>{
   var fileId = req.url.split('/');
   User.findOne({_id: id }, (err, user)=>{
     File.findOne({_id: fileId[4] }, (err, file)=>{
-      console.log(file);
+      console.log(user);
       res.json(file);
     });
   });
@@ -96,22 +96,8 @@ UsersRoute.post('/users/:id/files', (req, res)=>{
     });
   });
 });
-// UsersRoute.post('/users/:id/', (req, res)=>{
-//   var idUrl = req.params.id;
-//   var query = req.query.Key;
-//   console.log(idUrl);
-//   console.log(query);
-//   var params = {Bucket: 'sawabucket', Key: idUrl, Body: '"' + req.body + '"'};
-//   s3.upload(params, (err, data)=>{
-//     if(err){
-//       return console.log('AWS error : ' + err);
-//     }
-//     res.send(data.Body);
-//     res.end();
-//   });
-// });
 
-//adding file_id into a user
+//PUT adding file_id into a user
 UsersRoute.put('/users/:id/files/:file', (req, res)=>{
   var id = req.params.id;
   var idFile = req.url.split('/')[4];
@@ -126,12 +112,13 @@ UsersRoute.put('/users/:id/files/:file', (req, res)=>{
       console.log( 'successfully deleted Object data!  ' + data);
       s3.putObject(params, (err, obj)=>{
         var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: idFile});
-        console.log('AWS URL  : ' + url);
+        console.log('Object added  : ' + obj);
         File.update({_id: idFile}, {url: url}, (err, file)=>{
           if(err){
             return res.json({msg: err});
           }
           File.findOne({_id: idFile}, (err, file2)=>{
+            console.log('Updated User Info :  ' + user);
             res.json({msg: 'Successfully updated data  ' + file + ' here is new data  ' + file2});
           });
         });//File update end
