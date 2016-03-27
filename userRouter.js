@@ -114,15 +114,30 @@ UsersRoute.post('/users/:id/files', (req, res)=>{
 //adding file_id into a user
 UsersRoute.put('/users/:id/files/:file', (req, res)=>{
   var id = req.params.id;
-  var idFile = req.url.split('/');
-  var updateData = {$push: {files: idFile[4]}};
+  var idFile = req.url.split('/')[4];
+  var params = {Bucket: 'sawabucket', Key: idFile, Body: JSON.stringify(req.body)};
   var query = {_id: id};
-  console.log(idFile[4]);
-  console.log('params : ' + idFile[2]);
-  User.findOneAndUpdate(query, updateData,(err, data)=>{
-    res.json(data);
-    res.end();
-  });
+
+  User.findOne(query, (err, user)=>{
+    s3.deleteObject({Bucket: 'sawabucket', Key: idFile}, (err, data)=>{
+      if(err){
+        return res.json({msg: err});
+      }
+      console.log( 'successfully deleted Object data!  ' + data);
+      s3.putObject(params, (err, obj)=>{
+        var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: idFile});
+        console.log('AWS URL  : ' + url);
+        File.update({_id: idFile}, {url: url}, (err, file)=>{
+          if(err){
+            return res.json({msg: err});
+          }
+          File.findOne({_id: idFile}, (err, file2)=>{
+            res.json({msg: 'Successfully updated data  ' + file + ' here is new data  ' + file2});
+          });
+        });//File update end
+      });//s3 put obj end
+    });//s3 delete end
+  });//findOne end
 });
 
 //Updates/changes info for a patircular user
@@ -135,64 +150,27 @@ UsersRoute.put('/users/:id',(req, res)=>{
   });
 });
 
-// UsersRoute.put('/users/:id/files/:file', (req, res)=>{
-//   var id = req.params.id;
-//   var fileId = req.url.split('/');
-//   var params = {Bucket: 'sawabucket', {Key: }}
-//
-// });
 
 UsersRoute.delete('/users/:id/files/:file', (req, res)=>{
   console.log('here is delete request on /users');
   var id = req.params.id;
-  var urlId = req.url.split('/');
-
-  // User.findOneAndUpdate({_id: id},{$pull: {files: urlId[4]}},(err, user)=>{
-  //   console.log(user);
-  //   res.end();
-  // });
-  File.findOne({_id: urlId[4]},(err, user)=>{
-    var param = {Bucket: 'sawabucket', EncodingType: user.url };
-    console.log(user.url);
-    s3.listObjects(param, (err, data)=>{
-      data.remove();
-    });
-    res.end();
+  var urlId = req.url.split('/')[4];
+  var param = {Bucket: 'sawabucket', Delete: { Objects: [ {Key: urlId} ]}};
+  s3.deleteObjects(param, (err, data)=>{
+    console.log(data);
   });
-  // User.findOne({_id: idUrl}, (err, user)=>{
-  //   if(err){
-  //     return res.json({msg: 'There was an err findind data'});
-  //   }
-  //   File.findOne({_id: user.files}, (err, file)=>{
-  //     console.log(file.url);
-  //     var params = {Bucket: 'sawabucket', EncodingType : JSON.parse(file.url)}
-  //     s3.listObjects(params, (err, data)=>{
-  //       console.log(data);
-  //     });
-  //   });
-  // });
-  // File.remove({_id: idUrl}, (err, file)=>{
-  //   console.log('removed!');
-  // });
-
-
-  // User.update({_id: idUrl}, {$set: {files: []}},(err, data)=>{
-  //   if(err){
-  //     console.log('Not updated : ' + err);
-  //     return;
-  //   }
-  //   console.log('No files data : ' + data);
-  // });
-  //
-  //
-  // User.remove({_id: idUrl}, (err, data)=>{
-  //   if(err){
-  //     return console.log('Error removing item : ' + err);
-  //   }
-  //   console.log('Item removed Successfully! ' +  data);
-  //   res.send(data);
-  //   res.end();
-  // });
+  User.findOneAndUpdate({_id: id},{$pull: {files: urlId}},(err, user)=>{
+    console.log(user);
+  });
+  File.remove({_id: urlId }, (err, file)=>{
+    res.json({msg: 'removed! ' + file});
+  });
+  File.findOne({_id: urlId}, (err, file)=>{
+    if(err){
+      console.log('No such file exist : ' + err);
+    }
+    console.log('File is still in db  : ' + file);
+  });
 });
 
 module.exports = UsersRoute;
