@@ -103,23 +103,24 @@ UsersRoute.put('/users/:id/files/:file', (req, res)=>{
   var idFile = req.url.split('/')[4];
   var params = {Bucket: 'sawabucket', Key: idFile, Body: JSON.stringify(req.body)};
   var query = {_id: id};
-  debugger;
+
   User.findOne(query, (err, user)=>{
-    s3.deleteObject({Bucket: 'sawabucket', Key: idFile}, (err, data)=>{
+    s3.deleteObjects({Bucket: 'sawabucket', Delete:{ Objects:[{ Key: idFile}]}}, (err, data)=>{
       if(err){
         return res.json({msg: err});
       }
-      console.log( 'successfully deleted Object data!  ' + data);
-      s3.putObject(params, (err, obj)=>{
-        var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: });
+      console.log( 'successfully deleted Object data!  ' + data + ' ' + user);
+      s3.upload(params, (err, obj)=>{
+        console.log('Obj Key : '  + obj.Key);
+        var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: idFile});
         console.log('Object added  : ' + JSON.stringify(obj));
         File.update({_id: idFile}, {url: url}, (err, file)=>{
           if(err){
             return res.json({msg: err});
           }
+          console.log(file);
           File.findOne({_id: idFile}, (err, file2)=>{
-            console.log('Updated User Info :  ' + user);
-            res.json({msg: 'Successfully updated data  ' + JSON.stringify(file) + ' here is new data  ' + file2});
+            res.json(file2);
           });
         });//File update end
       });//s3 put obj end

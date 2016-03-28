@@ -104,9 +104,10 @@ describe('Integration test for routes',()=>{
     .put('/users/' + id + '/files/' + testFile)
     .send(updateTestFile)
     .end((err, res)=>{
+      debugger;
       expect(err).to.be.null;
       expect(res.body).to.be.an('object');
-      expect(res.body.url).to.have.property('string');
+      expect(res.body.msg).to.have.property('url');
       done();
     });
   });
