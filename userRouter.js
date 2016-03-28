@@ -31,8 +31,11 @@ UsersRoute.get('/users/:id', (req, res)=>{
 UsersRoute.get('/users/:id/files', (req, res)=>{
   var id = req.params.id;
   // var query = req.url.split('/')[3];
-  User.findOne({_id: id},(err, file)=>{
-    res.json(file.files);
+  User.findOne({_id: id},(err, user)=>{
+    if(err){
+      return res.json({msg: err});
+    }
+    res.json(user.files);
   });
 });
 
@@ -100,7 +103,7 @@ UsersRoute.put('/users/:id/files/:file', (req, res)=>{
   var idFile = req.url.split('/')[4];
   var params = {Bucket: 'sawabucket', Key: idFile, Body: JSON.stringify(req.body)};
   var query = {_id: id};
-
+  debugger;
   User.findOne(query, (err, user)=>{
     s3.deleteObject({Bucket: 'sawabucket', Key: idFile}, (err, data)=>{
       if(err){
@@ -108,15 +111,15 @@ UsersRoute.put('/users/:id/files/:file', (req, res)=>{
       }
       console.log( 'successfully deleted Object data!  ' + data);
       s3.putObject(params, (err, obj)=>{
-        var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: idFile});
-        console.log('Object added  : ' + obj);
+        var url = s3.getSignedUrl('getObject', {Bucket: 'sawabucket', Key: });
+        console.log('Object added  : ' + JSON.stringify(obj));
         File.update({_id: idFile}, {url: url}, (err, file)=>{
           if(err){
             return res.json({msg: err});
           }
           File.findOne({_id: idFile}, (err, file2)=>{
             console.log('Updated User Info :  ' + user);
-            res.json({msg: 'Successfully updated data  ' + file + ' here is new data  ' + file2});
+            res.json({msg: 'Successfully updated data  ' + JSON.stringify(file) + ' here is new data  ' + file2});
           });
         });//File update end
       });//s3 put obj end
@@ -127,9 +130,12 @@ UsersRoute.put('/users/:id/files/:file', (req, res)=>{
 //Updates/changes info for a patircular user
 UsersRoute.put('/users/:id',(req, res)=>{
   var id = req.params.id;
-  var updateData = {user: req.body.user };
-  console.log(updateData);
-  User.findOneAndUpdate({_id: id}, updateData, (err, user)=>{
+  var updateData = {$set: {user: req.body.user }};
+  console.log('Here is New incoming data :  ' + JSON.stringify(updateData));
+  User.findOneAndUpdate({_id: id}, updateData,{new: true}, (err, user)=>{
+    if(err){
+      return res.json({msg: 'Not updated.'});
+    }
     res.json(user);
   });
 });

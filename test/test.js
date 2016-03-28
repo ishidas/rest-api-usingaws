@@ -11,7 +11,9 @@ process.env.MONGOLAB_URI = 'mongodb://localhost/test';
 // let File = require(__dirname + '/../models/filesSchema');
 require('./../server');
 var testUser = {user: 'Otter'};
+var updateUser = {user: 'Otter Jr.'};
 var testFile = {myNote: 'Otter is the cutest animal.'};
+var updateTestFile = {myNote: 'Otter is the cutest animal, but they eat ugly.'};
 var id;
 var fileId;
 
@@ -76,5 +78,44 @@ describe('Integration test for routes',()=>{
       done();
     });
   });
-  it('shoul PUT new ')
+  it('should GET all the files from a specific user',(done)=>{
+    request('localhost:3000')
+    .get('/users/' + id + '/files')
+    .end((err, res)=>{
+      expect(err).to.be.null;
+      expect(res.body).to.have.an('array');
+      expect(res.body[0]).to.have.a('string');
+      done();
+    });
+  });
+  it('should PUT updated user info',(done)=>{
+    request('localhost:3000')
+    .put('/users/' + id)
+    .send(updateUser)
+    .end((err, res)=>{
+      expect(err).to.be.null;
+      expect(res.body).to.have.property('user');
+      expect(res.body.user).to.eql('Otter Jr.');
+      done();
+    });
+  });
+  it('should PUT and change a particular file in s3 and update url', (done)=>{
+    request('localhost:3000')
+    .put('/users/' + id + '/files/' + testFile)
+    .send(updateTestFile)
+    .end((err, res)=>{
+      expect(err).to.be.null;
+      expect(res.body).to.be.an('object');
+      expect(res.body.url).to.have.property('string');
+      done();
+    });
+  });
+  // it('should delete a specific file from db and obj form s3 and update user',(done)=>{
+  //   request('localhost:3000')
+  //   .delete('/users/' + id + '/files/' + testFile)
+  //   .end((err, res)=>{
+  //     expect()
+  //     done();
+  //   });
+  // });
 });
